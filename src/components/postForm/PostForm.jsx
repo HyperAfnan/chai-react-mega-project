@@ -3,44 +3,51 @@ import { useForm } from "react-hook-form";
 import { Button, Input, Select, RealTimeEditor } from "../index.js";
 import service from "../../appwrite/config.js";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector , useDispatch } from "react-redux";
+import { createPost , editPost } from "../../store/postSlice.js";
 
 const PostForm = ({ post }) => {
    const navigate = useNavigate();
-   const userData = useSelector((state) => state.userData);
+   const dispatch = useDispatch();
+   let userData = useSelector((state) => state.auth.userData.userData);
    const { register, handleSubmit, watch, setValue, control, getValues } =
       useForm({
          defaultValues: {
             title: post?.title || "",
             content: post?.content || "",
             slug: post?.slug || "",
-            statues: post?.status || "active",
+            status: post?.status || "active",
          },
       });
 
    const submit = async (data) => {
       if (post) {
-         const file = data?.image[0] ? service.uploadFile(data.image[0]) : null;
+         const file = data?.image[0] ? await service.uploadFile(data.image[0]) : null;
          if (file) {
-            service.deleteFile(post.featuredImage);
+            await service.deleteFile(post.featuredImage);
          }
-         const dbpost = await service.updatePost(post.$id, {
+         const dbpost = await service.updatePost({
             ...data,
-            featuredImage: file || file.$id || undefined,
+            slug: post.$id,
+            featuredImage: file?.$id || undefined,
          });
          if (dbpost) {
+            console.log("dbpost" , dbpost)
+            dispatch(editPost(dbpost))
             navigate(`/post/${dbpost.$id}`);
          }
       } else {
          const file = data?.image[0]
             ? await service.uploadFile(data.image[0])
             : null;
+
          const dbpost = await service.createPost({
             ...data,
             featuredImage: file?.$id,
-            userId: userData.$id,
+            userId: userData?.$id,
          });
          if (dbpost) {
+            dispatch(createPost(dbpost));
             navigate(`/post/${dbpost.$id}`);
          }
       }
@@ -102,11 +109,11 @@ const PostForm = ({ post }) => {
                accept="image/png, image/jpg, image/jpeg, image/gif"
                {...register("image", { required: !post })}
             />
-            {post && (
+            {post && post?.featuredImage && (
                <div className="w-full mb-4">
                   <img
-                     src={service.getFilePreview(post.featuredImage)}
-                     alt={post.title}
+                     src={service.getFileView(post?.featuredImage)}
+                     alt={post?.title}
                      className="rounded-lg"
                   />
                </div>

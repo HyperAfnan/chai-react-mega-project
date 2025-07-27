@@ -13,14 +13,14 @@ export class Service {
       this.databases = new Databases(this.client);
    }
 
-   // database services 
+   // database services
    async createPost({ title, slug, content, featuredImage, status, userId }) {
       try {
          return await this.databases.createDocument(
             conf.appwriteDatabase,
             conf.appwriteCollection,
             slug,
-            { title, content, featuredImage, status, userId },
+            { title, content, featuredImage, status, userid: userId },
          );
       } catch (error) {
          throw error;
@@ -77,7 +77,11 @@ export class Service {
    // file uploading services
    async uploadFile(file) {
       try {
-         return await this.bucket.updateFile(conf.appwriteBucket, ID.unique(), file);
+         return await this.bucket.createFile(
+            conf.appwriteBucket,
+            ID.unique(),
+            file,
+         );
       } catch (e) {
          throw e;
       }
@@ -86,14 +90,14 @@ export class Service {
    async deleteFile(fileId) {
       try {
          await this.bucket.deleteFile(conf.appwriteBucket, fileId);
-         return true
+         return true;
       } catch (e) {
          throw e;
       }
    }
 
-   getFilePreview(fileId) {
-         return this.bucket.getFilePreview(conf.appwriteBucket, fileId)
+   getFileView(fileId) {
+      return this.bucket.getFileView(conf.appwriteBucket, fileId);
    }
 }
 
